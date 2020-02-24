@@ -1,0 +1,9 @@
+# junk dir
+xlsx/
+temp/
+Old files/
+data/
+__pycache__/
+.vscode/
+
+
