@@ -2,7 +2,7 @@ import fdAPI_wrapper_mod as fd
 import os
 
 
-def Deck(x, y, t, xsupp, ysupp, xload, yload, dia, loadIntensity, materialName, mesh, poisson, Ext_list, close, filename, Section):
+def Deck(x, y, t, xsupp, ysupp, xload, yload, dia, loadIntensity, materialName, mesh, poisson, Ext_list, close, filename):
   # init model
   fd.initiateModel("S")
   direction = fd.coord(0,0,-1)
@@ -24,13 +24,7 @@ def Deck(x, y, t, xsupp, ysupp, xload, yload, dia, loadIntensity, materialName, 
 
 
   # create load
-  #fd.addLineLoad(loadIntensity, direction, ll, p0, p1)
-  #i=0
-  #for i in range(0, len(xload)-1):
-    #  p0 = fd.coord(xload[i]-dia,yload[i]-dia,0)
-    #  p1 = fd.coord(xload[i]+dia,yload[i]+dia,0)
-      #fd.addSurfaceLoad(loadIntensity, direction,ll, p0, p1 )
-  p0 = fd.coord(xload-dia,yload-dia,0)
+   p0 = fd.coord(xload-dia,yload-dia,0)
   p1 = fd.coord(xload+dia,yload+dia,0)
   fd.addSurfaceLoad(loadIntensity, direction,ll, p0, p1 )
 
