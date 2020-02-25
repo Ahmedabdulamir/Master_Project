@@ -12,11 +12,11 @@ ParserIn= {'Direction' : 'y',
                   'Vy' : int(9),
                   'M2' : int(4),
                   'My' : int(3),
-             'Section' : [1.25, 2.4, 2.5, 2.6, 4, 5],
+             'Section' : [1.25], #, 2.4, 2.5, 2.6, 4, 5
                 'Mesh' : float(0.25),
        'loadIntensity' : 10,
            'plot_sort' : 3,
-                   'W' : [30, 0.5, 1, 1.5, 2]}
+                   'W' : [30]} #, 0.5, 1, 1.5, 2
 
 dia = 0.2
 
