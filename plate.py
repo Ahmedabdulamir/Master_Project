@@ -61,7 +61,7 @@ def Deck(x, y, t, xsupp, ysupp, xload, yload, dia, loadIntensity, materialName, 
   
 
   #create bsc
-  batchfile = ['temp/' + str(x) + '.bsc' for x in Ext_list]
+  batchfile = ['BSC/' + str(x) + '.bsc' for x in Ext_list]
   exportfile = ['temp/'+ str(filename) + '/' + str(filename) + str(x) + '.txt' for x in Ext_list]
 
   fd.runFD('LIN', False, close, 'no', filePath, batchfile, exportfile)   

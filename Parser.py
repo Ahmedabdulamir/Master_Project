@@ -8,6 +8,8 @@ import openpyxl as xl
 import shutil
 
 
+
+
 def _opExcel(data, data_type, Path, Direction, Moment):
     
     if not os.path.exists('xlsx/' + Path + '/'+ Path + Direction + '.xlsm'):
@@ -42,12 +44,7 @@ def _opExcel(data, data_type, Path, Direction, Moment):
         if index == 1 and i > 2:
             coor1 = _cell(ws.cell(row=i,column=col))
             coor2 = _cell(ws.cell(row=8,column=col))
-            # ws.cell(row=i+8,column=col).value = '=ROUND('+ coor2 + '/' + coor1 + ',2)'
-            # ws.cell(row=i+17,column=int(col/10)+140).value = '='+ _cell(ws.cell(row=i+8 ,column=col)) + '/2'
-            # ws.cell(row=i+17,column=int(col/10)+155).value = '='+ _cell(ws.cell(row=i+8 ,column=col)) + '/-2'
-            # ws.cell(row=19,column=int(col/10)+140).value = '='+ _cell(ws.cell(row=10 ,column=col))  
-            # ws.cell(row=19,column=int(col/10)+155).value = '='+ _cell(ws.cell(row=10 ,column=col))
-
+           
             ws.cell(row=i+8,column=col).value = '=ROUND('+ coor2 + '/' + coor1 + ',2)'
             ws.cell(row=int(col/10)+6,column=i+272).value = '='+ _cell(ws.cell(row=i+8 ,column=col)) + '/2'
             ws.cell(row=int(col/10)+100,column=i+272).value = '='+ _cell(ws.cell(row=i+8 ,column=col)) + '/-2'
@@ -68,99 +65,98 @@ def _cell(coor):
     coor = coor.split(".")
     return str(coor[1])
 
-def _parser(path, Moment, Section, Direction, meshsize , sort, y,  w, _print):
-    
-    #Checking for the requested data
-    if Moment == 'M2':
-        Index3 =4
-        if Direction == "y": 
-                Index1 = 1
-                Index2 = 2
-        elif Direction == "x": 
-            Index1 = 2
-            Index2 = 1
-            
-    elif Moment == 'My':
-        Index3 =3
-        if Direction == "y": 
-            Index1 = 1
-            Index2 = 2
-        elif Direction == "x": 
-            Index1 = 2
-            Index2 = 1
+   
+def _Coor(Path, ParserIn):
+    #Reading the FEM design 19 coordinates batchfile intothe node-coordinates dataframe (coor_df)    
+    Index= ParserIn.get(ParserIn.get('Direction'))
+    meshsize = ParserIn.get('Mesh')
 
-    elif Moment == 'Vy':
-        Index3 =9
-        Moment = 'My'
-        if Direction == "y": 
-            Index1 = 1
-            Index2 = 2
-        elif Direction == "x": 
-            Index1 = 2
-            Index2 = 1
+    coor_df=pd.read_csv('./temp/'+ Path +'/'+ Path +'_coor.txt',sep='	', header=None, engine='python')
+    nod_dic = {}
+
+    for Sec in (ParserIn.get('Section')):    
+        node_df = coor_df.loc[abs(coor_df[Index[0]]-Sec) <= (meshsize)]         #change the column number 1:X 2:Y      (meshsize/2)0.5= torellence
+        nod_dic[Sec] = node_df
     
+    #node_df = node_df.append(extract_df_nodes, ignore_index = True)
+    return (nod_dic)
+
+def _sort(df, by):
+    df.sort_values(by=[by], inplace = True)
+    df.reset_index(drop=True, inplace=True)   
+    return df      
 
 
-    #Reading the FEM design 19 coordinates batchfile intothe node-coordinates dataframe (coor_df)
-    coor_df=pd.read_csv('./temp/'+ path +'/'+ path +'_coor.txt',sep='	', header=None, engine='python')
-    
+def Analyze(Path, ParserIn):
     #initilizing the dataframes
+    Index1 = ParserIn.get(ParserIn.get('Direction')) 
+    Parameter = ParserIn.get('Parameter')
+    w = ParserIn.get('W')
+    # sec_dict={x : None for x in Para + ['Y', 'X', 'P_avg', 'P_h']}
+    # w_dict= {x : {} for x in w}
+    # data_dict={x : {} for x in ParserIn.get('Section')}
+    nod_dic =_Coor(Path, ParserIn)
+    
+    Para_dict={}
+    for Para in Parameter:
+        load_df=pd.read_csv('./temp/'+ Path +'/'+ Path + '_' + Para + '.txt',sep='	', header=None, engine='python')
+        data_dict={}
+        for Sec in (ParserIn.get('Section')): 
+            para_df1 = _Secdata(nod_dic.get(Sec), load_df, Index1, ParserIn.get(Para))
+            w_dict= {}
+            for W in w:
+                sec_dict={}
+                (No, X, Y, P) = x_section_w.section_interp(Sec, para_df1, W)
+                P_avg = y_intergration_w.averrage (Y, P, W)
+                sec_dict[Para[0]] = list(P)
+                sec_dict['P_avg'] = float(P_avg)
+                sec_dict['X'] = list(X)
+                sec_dict['Y'] = list(Y)
+                w_dict[W] = sec_dict
+        data_dict[Sec] = w_dict
+    Para_dict[Para] = data_dict
+    return(Para_dict)            
+
+
+def _Secdata(node_df, load_df, Index1, Index2):            
     extract_load_df = pd.DataFrame()   #where the nodes corrdinates are stored   
     filtered_nodes_df = pd.DataFrame()
-
-    node_df = coor_df.loc[abs(coor_df[Index1]-Section) <= (meshsize)]         #change the column number 1:X 2:Y      (meshsize/2)0.5= torellence
-    #node_df = node_df.append(extract_df_nodes, ignore_index = True)
-    
-    node_df_list = node_df[0].tolist()
-    node_df_list = [x for x in node_df_list if x != 'nan']
-
-    #Reading the FEM design 19 data batchfile into the node-Load datadrame (load_df)     
-    load_df=pd.read_csv('./temp/'+ path +'/'+ path + '_' + Moment + '.txt',sep='	', header=None, engine='python')
-
-
     #Extracting the related nodes data
+    node_df_list = [x for x in node_df[0].tolist() if x != 'nan']
     extract_load_df = extract_load_df.append(load_df[load_df[2].isin(node_df_list)] , ignore_index = True)
     
     #Filtering the node-coordinates dataframe according to the extracted node-load dataframe
     filtered_nodes_df = filtered_nodes_df.append(node_df[node_df[0].isin(extract_load_df[2].tolist())], ignore_index = True)
-    
+    filtered_nodes_df = _sort(filtered_nodes_df, 0)
+    extract_load_df = _sort(extract_load_df, 2)
 
-    #Dropping irrelvant colmuns from the node-load dataframe
-    if Index3 == 9:
-        dropped_col = [3, 4, 5, 6, 7, 8, 10]
-        Moment = 'Vy'
-    elif Index3 == 4 or Index3 == 3:
-        dropped_col = list(range(6, extract_load_df.shape[1]))
-
-    #print(extract_load_df, dropped_col)
-    extract_load_df.drop(axis=1, columns=[0, 1], inplace=True)
-    extract_load_df.drop(axis=1, columns=dropped_col, inplace=True)
-    #print(extract_load_df, dropped_col)
-    
-    #Sorting and reindexing of the node-coordinates and the node-load dataframes
-    filtered_nodes_df.sort_values(by=[0], inplace = True)
-    extract_load_df.sort_values(by=[2], inplace = True)
-    filtered_nodes_df.reset_index(drop=True, inplace=True)
-    extract_load_df.reset_index(drop=True, inplace=True)
-
-    #Merging the two dataframes and resorting according to value [sort]
-    result_df = pd.concat([extract_load_df[2], extract_load_df[Index3],filtered_nodes_df[0], filtered_nodes_df[Index2], filtered_nodes_df[Index1]], axis=1)
+    result_df = pd.concat([extract_load_df[2], extract_load_df[Index2],filtered_nodes_df[0], 
+                            filtered_nodes_df[Index1[1]], filtered_nodes_df[Index1[0]]], axis=1)
     result_df.columns = range(result_df.shape[1])
-    result_df.sort_values(by=[sort], inplace = True)
-    result_df.reset_index(drop=True, inplace=True)
-
-
-    # dropped_row = list(range(0 ,int((len(result_df.index))/2)))
-    # result_df.drop(axis=0, index=dropped_row, inplace=True)
-    # result_df.reset_index(drop=True, inplace=True)
-
+    return(result_df)
+                       
+            # data_dic[1.25][Para] = result_df[1].tolist()
+            # data_dic[1.25]['Y']  = result_df[3].tolist()
+            # data_dic[1.25]['No'] = result_df[0].tolist()
+            # data_dic[1.25]['X'] = result_df[4].tolist()
+            
+            # data_dic['1.25'][Para] = Sec
+            # # data_dic['1.25']['Y']  = 'zxc Y'
+            # # data_dic['1.25']['No'] = 'zxc No'
+            # # data_dic['1.25']['X'] = 'zxc X'
+            
+        
+        
     
-    #Printing for debuging 
-    if _print != False:
-        print(extract_load_df, extract_load_df.shape)
-        print(filtered_nodes_df)
-        print(result_df)
+            
+    
+        
+            # dropped_row = list(range(0 ,int((len(result_df.index))/2)))
+            # result_df.drop(axis=0, index=dropped_row, inplace=True)
+            # result_df.reset_index(drop=True, inplace=True)
 
+def _Math(Section, Path, Direction, Moment, w, remove):   
+    
     # Calling the interpolation function
     M_avg = [Moment + '_avg'] + [None]*len(w)
     for i in range (0, len(w)):
@@ -175,6 +171,7 @@ def _parser(path, Moment, Section, Direction, meshsize , sort, y,  w, _print):
         _opExcel(['Y_w=' + str(W)]+ list(Y), 'Y', path, Direction, Moment)
         M_avg[i+1] = y_intergration_w.averrage (Y, M, W)
     _opExcel(M_avg, 'M_avg', path, Direction, Moment)
+    return
         
     
     # Shifting the plotting axis to the load centerline

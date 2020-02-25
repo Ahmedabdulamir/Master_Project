@@ -1,8 +1,15 @@
+import numpy as np
+import pandas as pd
 
-def section_interp (x_need, node, x, y, m, w):
-    import numpy as np
+def section_interp (x_need, df, w):
+    
     # part 1 =====================================================================  
     # define arrays
+    m =  df[1].tolist()       #Moment/ Shear values
+    y =  df[3].tolist()       #Y coordinates
+    node = df[0].tolist()      #Nodes
+    x =  df[4].tolist()       #X coordinates
+    
     node_a = np.array(node)
     x_a = np.array(x)
     y_a = np.array(y)
