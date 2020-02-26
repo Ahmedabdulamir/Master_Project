@@ -2,20 +2,22 @@ import fdAPI_wrapper_mod as fd
 import os
 
 
-def Deck(x, y, t, xsupp, ysupp, xload, yload, dia, loadIntensity, materialName, mesh, poisson, Ext_list, close, filename):
+def Deck(Path, ParserIn, FEMIn, close):
   # init model
   fd.initiateModel("S")
   direction = fd.coord(0,0,-1)
            
 
   # add material
-  material = fd.addMaterial(fd.material(materialName, "0", "0", poisson))
+  material = fd.addMaterial(fd.material(FEMIn['materialName'], "0", "0", FEMIn['poisson']))
   
   # add structural parts
+  x = FEMIn['x']
+  y = FEMIn['y']
   for i in range(0, len(x)-1):
       p0 = fd.coord(x[i],0,0)
       p1 = fd.coord(x[i+1],y,0)
-      fd.addPlate(material, t[i], t[i+1], " ", p0, p1, "top", mesh)
+      fd.addPlate(material, FEMIn['t'][i], FEMIn['t'][i+1], " ", p0, p1, "top", str(ParserIn['Mesh']))
 
 
   # add load cases
@@ -24,19 +26,19 @@ def Deck(x, y, t, xsupp, ysupp, xload, yload, dia, loadIntensity, materialName, 
 
 
   # create load
-   p0 = fd.coord(xload-dia,yload-dia,0)
-  p1 = fd.coord(xload+dia,yload+dia,0)
-  fd.addSurfaceLoad(loadIntensity, direction,ll, p0, p1 )
+  p0 = fd.coord(FEMIn['xload'] - FEMIn['dia'], FEMIn['yload'] - FEMIn['dia'] ,0)
+  p1 = fd.coord(FEMIn['xload'] + FEMIn['dia'], FEMIn['yload'] + FEMIn['dia'] ,0)
+  fd.addSurfaceLoad(FEMIn['loadIntensity'], direction,ll, p0, p1 )
 
 
   # add load combinations
   fd.addLoadComb("LC1", "U", [dl, ll], [1.35, 1.5])
 
   # create points
-  p0 = fd.coord(xsupp[0],0,0)
-  p1 = fd.coord(xsupp[0],ysupp,0)
-  p2 = fd.coord(xsupp[1],0,0)
-  p3 = fd.coord(xsupp[1],ysupp,0)
+  p0 = fd.coord(FEMIn['xsupp'][0],0,0)
+  p1 = fd.coord(FEMIn['xsupp'][0],FEMIn['ysupp'],0)
+  p2 = fd.coord(FEMIn['xsupp'][1],0,0)
+  p3 = fd.coord(FEMIn['xsupp'][1],FEMIn['ysupp'],0)
 
 
   # create supports
@@ -45,23 +47,23 @@ def Deck(x, y, t, xsupp, ysupp, xload, yload, dia, loadIntensity, materialName, 
 
 
   #Verifying and creating working directory
-  if not os.path.exists('temp/'+ str(filename)):
-    os.mkdir('temp/'+ str(filename))
+  if not os.path.exists('temp/'+ str(Path)):
+    os.mkdir('temp/'+ str(Path))
 
 
   # create struxml
-  filePath = 'temp/'+ str(filename) +'/'+ str(filename) +'_model.struxml'
+  filePath = 'temp/'+ str(Path) +'/'+ str(Path) +'_model.struxml'
   fd.finish(filePath)
   
 
   #create bsc
-  batchfile = ['BSC/' + str(x) + '.bsc' for x in Ext_list]
-  exportfile = ['temp/'+ str(filename) + '/' + str(filename) + str(x) + '.txt' for x in Ext_list]
+  batchfile = ['BSC/' + str(x) + '.bsc' for x in FEMIn['Ext_list']]
+  exportfile = ['temp/'+ str(Path) + '/' + str(Path) + str(x) + '.txt' for x in FEMIn['Ext_list']]
 
-  fd.runFD('LIN', False, close, 'no', filePath, batchfile, exportfile)   
+  #fd.runFD('LIN', False, close, 'no', filePath, batchfile, exportfile)   
   
   #open fd
-  #fd.openFD(filePath)
+  fd.openFD(filePath)
 
   return
 
