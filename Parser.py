@@ -16,7 +16,7 @@ def _Coordata(coor_df, ParserIn, Sec):
     meshsize = ParserIn.get('Mesh')
 
     node_df = coor_df.loc[abs(coor_df[Index[0]]-Sec) <= (meshsize)]         #change the column number 1:X 2:Y      (meshsize/2)0.5= torellence
-       
+    #print(node_df)   
     return (node_df)
 
 
@@ -61,7 +61,7 @@ def Analyze(Path, ParserIn, FEMIn):
                 sec_dict[Para] = list(P)
                 sec_dict['X'] = list(X)
                 sec_dict['Y'] = list(Y)
-                sec_dict[Para + '_avg'] = y_intergration_w.averrage (Y, P, W)
+                sec_dict[Para + '_avg'] = y_intergration_w.averrage (X, P, W)
                 sec_dict[Para + '_h'] = handcal.hand_calculation(FEMIn, Para, Sec)
                 w_dict[W] = sec_dict
             data_dict[Sec] = w_dict

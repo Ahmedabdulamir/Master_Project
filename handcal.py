@@ -98,14 +98,14 @@ def V_q (alfa, Lsp, x_sec, x_p, q, a):
     xi = ai + np.full_like(ai, x_p)
     qi = np.full_like(ai, q*a/(1000+1))
     inf_a_V = np.array ([inf_V (x_sec, x, alfa, Lsp) for x in xi])
-    return float (sum(qi*inf_a_V))
+    return float (-sum(qi*inf_a_V))
 
 
 def hand_calculation (FEMIn, Para, Sec):
     alfa = FEMIn.get('alpha')
     Lsp = FEMIn.get('lm')
     x_sec = Sec
-    x_p = FEMIn.get('xload')
+    x_p = FEMIn.get('yload')
     q = FEMIn.get('loadIntensity') * FEMIn.get('dia') * 2
     a = FEMIn.get('dia')*2
        

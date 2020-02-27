@@ -14,9 +14,9 @@ def Deck(Path, ParserIn, FEMIn, close):
   # add structural parts
   x = FEMIn['x']
   y = FEMIn['y']
-  for i in range(0, len(x)-1):
-      p0 = fd.coord(x[i],0,0)
-      p1 = fd.coord(x[i+1],y,0)
+  for i in range(0, len(y)-1):
+      p0 = fd.coord(0,y[i],0)
+      p1 = fd.coord(x,y[i+1],0)
       fd.addPlate(material, FEMIn['t'][i], FEMIn['t'][i+1], " ", p0, p1, "top", str(ParserIn['Mesh']))
 
 
@@ -35,11 +35,11 @@ def Deck(Path, ParserIn, FEMIn, close):
   fd.addLoadComb("LC1", "U", [dl, ll], [1.35, 1.5])
 
   # create points
-  p0 = fd.coord(FEMIn['xsupp'][0],0,0)
-  p1 = fd.coord(FEMIn['xsupp'][0],FEMIn['ysupp'],0)
-  p2 = fd.coord(FEMIn['xsupp'][1],0,0)
-  p3 = fd.coord(FEMIn['xsupp'][1],FEMIn['ysupp'],0)
-
+  p0 = fd.coord(0,FEMIn['ysupp'][0],0)
+  p1 = fd.coord(FEMIn['xsupp'],FEMIn['ysupp'][0],0)
+  p2 = fd.coord(0,FEMIn['ysupp'][1],0)
+  p3 = fd.coord(FEMIn['xsupp'],FEMIn['ysupp'][1],0)
+ 
 
   # create supports
   fd.addLineSupport(p0, p1, "hinged")
@@ -60,10 +60,10 @@ def Deck(Path, ParserIn, FEMIn, close):
   batchfile = ['BSC/' + str(x) + '.bsc' for x in FEMIn['Ext_list']]
   exportfile = ['temp/'+ str(Path) + '/' + str(Path) + str(x) + '.txt' for x in FEMIn['Ext_list']]
 
-  #fd.runFD('LIN', False, close, 'no', filePath, batchfile, exportfile)   
+  fd.runFD('LIN', False, close, 'no', filePath, batchfile, exportfile)   
   
   #open fd
-  fd.openFD(filePath)
+  #fd.openFD(filePath)
 
   return
 

@@ -477,8 +477,8 @@ def addPlate(material_ID, thickness1, thickness2, release, point1, point2, align
         add_hinge_child = ET.SubElement(add_hinge, 'rigidity')
         ET.SubElement(add_hinge_child, 'motions', x_neg='10000000', x_pos='10000000', y_neg='10000000', y_pos='10000000', z_neg='10000000', z_pos='10000000')
         ET.SubElement(add_hinge_child, 'rotations', x_neg='0', x_pos='0', y_neg='0', y_pos='0', z_neg='0', z_pos='0')
-    ET.SubElement(add_plate_child, 'thickness', x=str(point1.x), y='0', z='0', val=str(thickness1))             #Modified
-    ET.SubElement(add_plate_child, 'thickness', x=str(point2.x), y='0', z='0', val=str(thickness2))             #Modified
+    ET.SubElement(add_plate_child, 'thickness', x='0', y=str(point1.y), z='0', val=str(thickness1))             #Modified
+    ET.SubElement(add_plate_child, 'thickness', x='0', y=str(point2.y), z='0', val=str(thickness2))             #Modified
     ET.SubElement(add_plate_child, 'thickness', x=str(point2.x), y=str(point2.y), z=str(point2.z), val=str(thickness2))
     ET.SubElement(add_plate_child, 'local_pos', x=str(point1.x), y=str(point1.y), z=str(point1.z)) # The position of the local coordinate system should be any point inside the plate, in this case in the first point
     ET.SubElement(add_plate_child, 'local_x', x='1', y='0', z='0') # The direction of the local system is hard coded to be the same as the global coordinate system

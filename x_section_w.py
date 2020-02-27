@@ -111,7 +111,7 @@ def section_interp (x_need, df, w):
             print ("missing point in y direction")    
 
     else: 
-        print ("chosen width out of range, using full slab length")
+        #print ("chosen width out of range, using full slab length")
         # redefine w
         w = w_lim
         # define the points 
@@ -142,8 +142,8 @@ def section_interp (x_need, df, w):
     
     # final output
     node = node_a_na
-    x = x_a_na
-    y = y_a_na
+    y = x_a_na
+    x = y_a_na
     m = m_a_na
     w = w
     return (node, x, y, m)
