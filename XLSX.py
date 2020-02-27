@@ -80,14 +80,16 @@ def _chartformat(chart, chart_dict, ParserIn):
                                    'line': {'width': 1.0, 'dash_type': 'solid'}},
         'minor_gridlines': {    'visible': True,
                                    'line': {'width': 1.0, 'dash_type': 'solid'}},
-        'major_unit_type': chart_dict['x_unit']}
+        'major_unit_type': chart_dict['x_unit'],
+                    'min': chart_dict['min'],
+                    'max': chart_dict['max'],}
 
     chart.set_x_axis(axis)
     axis['name'] = chart_dict['y_label']
     axis['major_unit_type'] = chart_dict['y_unit']
     chart.set_y_axis(axis)
     
-    chart.set_size({'x_scale': chart_dict['size'] , 'y_scale': ParserIn['aspect_ratio']*chart_dict['size']})
+    chart.set_size({'x_scale': chart_dict['size'] , 'y_scale': chart_dict['aspect_ratio']*chart_dict['size']})
     chart.set_title({'name': chart_dict['Tiltle']})
     return(chart)
 
@@ -145,7 +147,8 @@ def _eqchart(ParserIn, Path, Para, workbook, col1, col2):
                   'y_unit' : 'm',
                  'y_label' : 'Length (m)',
                'minor_unit': ParserIn['Mesh'],
-               'major_unit': 1 }
+               'major_unit': 1 ,
+             'aspect_ratio': ParserIn['aspect_ratio']}
 
     chart = _chartformat(workbook.add_chart({'type': 'scatter'}), chart_dict, ParserIn)
     
@@ -160,30 +163,28 @@ def _eqchart(ParserIn, Path, Para, workbook, col1, col2):
                                  'marker': {'type': 'automatic'},})
     return(chart)
 
-def _secchart(ParserIn, Path, workbook, col1, col2):
+def _secchart(ParserIn, Path, workbook, col1, col2, dlen, refcell):
     #chart5 = workbook.add_chart({'type': 'scatter', 'subtype': 'smooth'})
-    w_col = len(ParserIn['W'])
-    chart_dict = {'Tiltle' : 'Section',
-                    'size' : 1.1,
+    chart_dict = {'Tiltle' : '=' + Path + '!$' + refcell,
+                    'size' : 2.5,
                    'style' : 14,
                   'x_unit' : 'm',
                  'x_label' : 'Width (m)',
                   'y_unit' : 'm',
                  'y_label' : 'Length (m)',
                'minor_unit': ParserIn['Mesh'],
-               'major_unit': 1 }
+               'major_unit': 1,
+             'aspect_ratio': 0.5 }
 
     chart = _chartformat(workbook.add_chart({'type': 'scatter'}), chart_dict, ParserIn)
     
-    scol1 = _no2lt(col1)
-    scol2 = _no2lt(col2-1)
-    for row in range(w_col*2+7,w_col*3+6):
-        chart.add_series({'categories': '=(' + Path + '!$' + scol1 + '$'+ str(w_col+5) +':$'+  scol2 +'$'+ str(w_col+5) +',' 
-                                        + '' + Path + '!$' + scol1 + '$'+ str(w_col+5) +':$'+  scol2 +'$'+ str(w_col+5) +')',
-                               'values': '=(' + Path + '!$' + scol1 + '$' + str(row)  + ':$'+  scol2 +'$'+ str(row) + ','
-                                        + '' + Path + '!$' + scol1 + '$' + str(row+w_col)  + ':$'+  scol2 +'$'+ str(row+w_col) + ')'  ,
-                                 'name': '=' + Path + '!$A$'+ str(row - w_col),
-                                 'marker': {'type': 'automatic'},})
+    i=0
+    for col in range(col1+3 ,col2+3, 2):
+        chart.add_series({'categories': '=(' + Path + '!$' + _no2lt(col) + '$1:$'+  _no2lt(col) +'$'+ str(dlen) + ')',
+                              'values': '=(' + Path + '!$' + _no2lt(col+1) + '$1:$'+  _no2lt(col+1) +'$'+ str(dlen) + ')',
+                                'name': 'W =' + str(ParserIn['W'][i]),
+                              'marker': {'type': 'automatic'},})
+        i+=1
     return(chart)
 
 
@@ -191,16 +192,16 @@ def _fill_formula(ParserIn, Para_dict, worksheet, col, refcell):
     w_col = len(ParserIn['W'])    
     len_itr = len(Para_dict['M2'][ParserIn['Section_M2'][0]][max(ParserIn['W'])]['X'])      #fixed to M2
     
-    worksheet.write_column( w_col*4 + 7 , col + 2, list(range(1,len_itr)))
+    worksheet.write_column( w_col*4 + 7 , col + 2, list(range(1,len_itr+1)))
 
     for j in range (w_col*4 + 7, len_itr + w_col*4 + 7):
-        for i in range(-1, w_col*2-2):
+        for i in range(-2, w_col*2-2):
             row = ('=OFFSET($A$'+ str(w_col*4 + 7) +',$'+ _no2lt(col+2) 
                 +str(j+1) +',MATCH($'+ refcell + ',$'+ str(w_col*4 + 7) +
                 ':$'+ str(w_col*4 + 7) + ',0)+' + str(i) +')')
-            worksheet.write( j , col + 4 + i, row) 
+            worksheet.write( j , col + 5 + i, row) 
     worksheet.set_column(_no2lt(col+2) + ':' + _no2lt(col + w_col*2 +2), None, None, {'hidden': True})
-    return(col + w_col*2 +2)     
+    return(col + w_col*2, w_col*4 + 8 + len_itr)     
 
 
 def xlsExcel(Path, Para_dict, ParserIn, FEMIn):
@@ -247,12 +248,18 @@ def xlsExcel(Path, Para_dict, ParserIn, FEMIn):
                 '2' : _no2lt(col2+1)+ str(w_col*4+8) }
 
     col1 = col2
-    col2 = _fill_formula(ParserIn, Para_dict, worksheet, col2, refcell['1'])
-    col1 = col2
-    col2 = _fill_formula(ParserIn, Para_dict, worksheet, col2, refcell['2'])
+    (col2, dlen)= _fill_formula(ParserIn, Para_dict, worksheet, col2, refcell['1'])
+    chart3 = _secchart(ParserIn, Path, workbook, col1, col2, dlen, refcell['1'])
+
+    col1 = col2+1
+    (col2, dlen) = _fill_formula(ParserIn, Para_dict, worksheet, col2+1, refcell['2'])
+    chart4 = _secchart(ParserIn, Path, workbook, col1, col2, dlen, refcell['2'])
+
 
     worksheet.insert_chart( _no2lt(col2 ) + '2', chart1)
-    worksheet.insert_chart( _no2lt(col2 +9) + '2', chart2)
+    worksheet.insert_chart( _no2lt(col2 +12) + '2', chart2)
+    worksheet.insert_chart( _no2lt(col2 ) + '66', chart3)
+    worksheet.insert_chart( _no2lt(col2 ) + '86', chart4)
 
     
     workbook.close()
