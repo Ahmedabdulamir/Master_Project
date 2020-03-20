@@ -32,7 +32,7 @@ def Deck(Path, ParserIn, FEMIn, close):
 
 
   # add load combinations
-  fd.addLoadComb("LC1", "U", [dl, ll], [1.35, 1.5])
+  fd.addLoadComb("LC1", "U", [dl, ll], [1, 1])
 
   # create points
   p0 = fd.coord(0,FEMIn['ysupp'][0],0)

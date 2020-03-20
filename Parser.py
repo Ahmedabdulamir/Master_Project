@@ -3,6 +3,7 @@ import os
 import x_section_w
 import y_intergration_w
 import handcal 
+import numpy as np
 
 
 def _Sort(df, by):
@@ -39,6 +40,30 @@ def _Secdata(node_df, load_df, Index1, Index2):
     #print(result_df)
     return(result_df)
 
+def q1q2( FEMIn, ParserIn, coor_df, load_df, Index, Para):
+    Q={} 
+    for w in ParserIn.get('W'):
+        q = {}
+        xlist = []
+        plist = []
+        for Sec in list(np.arange(0.2,9.8, 0.1)):
+            para_df1 = _Secdata(_Coordata(coor_df, ParserIn, Sec), load_df, Index, ParserIn.get(Para))
+            (No, X, Y, P) = x_section_w.section_interp(Sec, para_df1, w)
+            xlist.append(list(Y)[0]) 
+            plist.append(y_intergration_w.average (0, Para, Sec, X, P, w, False))
+        #result= pd.DataFrame(list(zip(xlist, plist)))
+        #result.to_csv('./temp/File Name.csv', index = False)
+        (q['q' + str(FEMIn.get('ysupp')[0])], q['q' + str(FEMIn.get('ysupp')[1])]) = handcal.q_moment(FEMIn, xlist, plist, w)
+        Q[w] = q
+   
+    return Q
+    # Q={} 
+    # for Sec in FEMIn['ysupp']:
+    #     para_df1 = _Secdata(_Coordata(coor_df, ParserIn, Sec), load_df, Index, ParserIn.get(Para))
+    #     (No, X, Y, P) = x_section_w.section_interp(Sec, para_df1, W)
+    #     Q['q' + str(Sec)] =  y_intergration_w.average (FEMIn.get('lk'), Para, Sec, X, P, W, True)
+     
+
 
 def Analyze(Path, ParserIn, FEMIn):
     #initilizing the dataframes
@@ -50,19 +75,21 @@ def Analyze(Path, ParserIn, FEMIn):
     for Para in ParserIn.get('Parameter'):
         load_df=pd.read_csv('./temp/'+ Path +'/'+ Path + '_' + Para + '.txt',sep='	', header=None, engine='python')
         data_dict={}
-       
+        q = q1q2(FEMIn, ParserIn, coor_df, load_df, Index, ParserIn.get('Parameter')[0])       #{'q2.5' : 0 , 'q7.5' : 0}# 
         for Sec in (ParserIn.get('Section_'+ Para)): 
             para_df1 = _Secdata(_Coordata(coor_df, ParserIn, Sec), load_df, Index, ParserIn.get(Para))
             w_dict= {}
-            
             for W in w:
                 sec_dict={}
+                q_w = q.get(W)
                 (No, X, Y, P) = x_section_w.section_interp(Sec, para_df1, W)
                 sec_dict[Para] = list(P)
                 sec_dict['X'] = list(X)
                 sec_dict['Y'] = list(Y)
-                sec_dict[Para + '_avg'] = y_intergration_w.averrage (X, P, W)
-                sec_dict[Para + '_h'] = handcal.hand_calculation(FEMIn, Para, Sec)
+                sec_dict[Para + '_avg'] = y_intergration_w.average (0, Para, Sec, X, P, W, False)
+                sec_dict[Para + '_h'] = handcal.hand_calculation(FEMIn, q_w, Para, Sec)
+                if Sec in FEMIn['ysupp']:
+                    sec_dict['q' + str(Sec)] = q_w.get('q' + str(Sec))
                 w_dict[W] = sec_dict
             data_dict[Sec] = w_dict
         Para_dict[Para] = data_dict

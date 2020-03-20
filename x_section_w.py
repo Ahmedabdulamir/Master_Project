@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 def section_interp (x_need, df, w):
     
@@ -39,11 +38,25 @@ def section_interp (x_need, df, w):
     if x_right == x_left and x_left == x_need:
         # print("existing section")
         m_a_interp = m_a_left
+        node_a_int = node_a_left
 
     elif x_right > x_left and x_left <= x_need <= x_right:
         # print("new interpolated section")
         # m_a_left and m_a_right as matrix  
         m_m =np.transpose(np.vstack((m_a_left, m_a_right)))
+
+        # mark the nodes with "+0.5" if selected x is not exist
+        if x_need == x_left :
+            # print("existing section")
+            node_a_int = node_a_left
+
+        elif  x_need == x_right :
+            # print("existing section")
+            node_a_int = node_a_right
+
+        else :
+            # print("new interpolated section")
+            node_a_int = np.array([node1 + 0.5 for node1 in node_a_left])
             
         # interpolation
         # predefine the interpolation vector
@@ -63,7 +76,7 @@ def section_interp (x_need, df, w):
     # slab length (biggest distribution width can be chosen)
     w_lim = max(y) - min(y)
 
-    if w_lim >= w:
+    if w_lim >= w > 0:
         # define the points 
         y_mid = (max(y)-min(y))/2 + min(y) 
         y_up = y_mid + w/2
@@ -80,7 +93,7 @@ def section_interp (x_need, df, w):
             ind_na = [y2 <= y_up and y2 >= y_down for y2 in y_a_left] 
             y_a_na = y_a_left [ind_na]
 
-            node_a_na = [node1 + 0.5 for node1 in node_a_left [ind_na]]
+            node_a_na = node_a_int[ind_na] 
             x_a_na = x_a_need [ind_na]
             y_a_na = y_a_left [ind_na]
             m_a_na = m_a_interp[ind_na]
@@ -102,13 +115,39 @@ def section_interp (x_need, df, w):
             m_inter_down = np.interp(y_down, np.hstack((y_a_left[ind_left_downdown], y_a_left[ind_left_downup])), np.hstack((m_a_interp[ind_left_downdown],m_a_interp[ind_left_downup])))
 
             # output
-            node_a_na = [node1+0.5 for node1 in np.hstack((np.array(node_a_left[ind_left_downdown]+0.25),node_a_left[ind_bt],np.array(node_a_left[ind_left_upup]+0.25)))]
+            node_a_na = np.hstack((np.array(node_a_int[ind_left_downdown]+0.25),node_a_int[ind_bt],np.array(node_a_int[ind_left_upup]+0.25)))
             x_a_na = np.hstack((x_a_need[ind_left_downdown], x_a_need[ind_bt], x_a_need[ind_left_upup]))
             y_a_na = np.hstack(([y_down], y_a_left[ind_bt], [y_up]))
             m_a_na = np.hstack(([m_inter_down], m_a_interp[ind_bt], [m_inter_up]))
 
         else:
             print ("missing point in y direction")    
+    
+    elif w == 0 :
+        # check the numbers of nodes is odd or even.
+        # case even
+        if np.size (y_a_left) % 2 == 0 :
+
+            ind_na = int(np.size(y_a_left)/2-1)
+
+            # out put
+            node_a_na = node_a_int [ind_na]
+            x_a_na = [x_a_need [ind_na].tolist()]
+            y_a_na = [y_a_left [ind_na].tolist()]
+            m_a_na = [m_a_interp[ind_na].tolist()]
+
+        # case odd
+        elif np.size (y_a_left) % 2 == 1 :
+           
+            ind_na = int((np.size(y_a_left)+1)/2-1)
+
+            print (ind_na)
+
+            # out put
+            node_a_na = np.array( node_a_int[ind_na] + 0.25 )
+            x_a_na = [x_a_need [ind_na].tolist()]
+            y_a_na = [y_a_left [ind_na].tolist()]
+            m_a_na = [m_a_interp[ind_na].tolist()]
 
     else: 
         #print ("chosen width out of range, using full slab length")
@@ -131,7 +170,7 @@ def section_interp (x_need, df, w):
             y_a_na = y_a_left [ind_na]
 
             # out put
-            node_a_na = [node1 + 0.5 for node1 in node_a_left [ind_na]]
+            node_a_na = node_a_int [ind_na]
             x_a_na = x_a_need [ind_na]
             y_a_na = y_a_left [ind_na]
             m_a_na = m_a_interp[ind_na]
@@ -145,10 +184,20 @@ def section_interp (x_need, df, w):
     y = x_a_na
     x = y_a_na
     m = m_a_na
-    w = w
+    
     return (node, x, y, m)
 
 
 # define the variables
 
+# node = [1, 6, 5, 10, 2, 3, 7, 8, 4, 9]
+# x = [10, 20, 10, 20, 10, 10, 20, 20, 10, 20]
+# y = [0, 0, 40, 40, 10, 20, 10, 20, 30, 30]
+# m = [-100, 60, 50, 150, 0, 200, 120, 300, 100, 400]
+# x_need = 15
+
+# w = 45
+
+
+# section_interp (x_need, node, x, y, m, w)
 
